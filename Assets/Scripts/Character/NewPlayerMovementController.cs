@@ -2,11 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour {
-
+public class NewPlayerMovementController : MonoBehaviour
+{
     [SerializeField] public CharacterController2D controller;
     [SerializeField] public Animator animator;
     [SerializeField] private float runSpeed = 40f;
+    [SerializeField] private float jumpSpeed = 40f;
     [SerializeField] private Rigidbody2D playerRigidbody2D;
 
     [SerializeField] private float walkDebounce;
@@ -24,6 +25,8 @@ public class PlayerMovement : MonoBehaviour {
     private bool crouching = false;
     private bool grounded = false;
 
+    private bool m_FacingRight = true;
+
     private void OnValidate() {
         if (controller == null) {
             TryGetComponent(out controller);
@@ -36,7 +39,6 @@ public class PlayerMovement : MonoBehaviour {
         }
     }
 
-    // Update is called once per frame
     void Update() {
 
         // Constantly update the velocities;
@@ -50,10 +52,13 @@ public class PlayerMovement : MonoBehaviour {
 
         horizontalSpeed_target = Input.GetAxisRaw("Horizontal") * runSpeed;
 
-        if (Input.GetButtonDown("Jump") || Input.GetButton("Jump")) {
-            jumping = true;
-            animator.SetBool("IsJumping", true);
-        } 
+        //if (Input.GetButtonDown("Jump") && !jumping) {
+        //    jumping = true;
+        //    animator.SetBool("IsJumping", true);
+        //    verticalSpeed_target = jumpSpeed;
+        //} else if (jumping) {
+        //    verticalSpeed_target = 0f;
+        //}
 
         if (Input.GetButtonDown("Crouch")) {
             crouching = true;
@@ -62,6 +67,34 @@ public class PlayerMovement : MonoBehaviour {
         }
     }
 
+    void FixedUpdate() {
+        float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime * (crouching ? crouchSpeed : 1);
+        //float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime * (crouching ? crouchSpeed : 1);
+        //Debug.Log("1:" + moveSpeedX);
+        MoveHorizontal(moveSpeedX);
+        //MoveVertical(moveSpeedY);
+    }
+
+    private void MoveHorizontal(float move) {
+        Vector2 targetVelocity = new Vector2(move * 10f, playerRigidbody2D.velocity.y);
+        //Debug.Log("2:" + targetVelocity);
+        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+        //Debug.Log("3:" + playerRigidbody2D.velocity);
+
+        // Flip player sprite if moving in opposite direction of facing
+        if ((move > 0 && !m_FacingRight) || (move < 0 && m_FacingRight)) {
+            Flip();
+        }
+    }
+
+    private void MoveVertical(float move) {
+        Vector2 targetVelocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
+        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+    }
+
+
+
+    // Utility/Helper methods
     public void OnLanding() {
         animator.SetBool("IsJumping", false);
         jumping = false;
@@ -72,29 +105,14 @@ public class PlayerMovement : MonoBehaviour {
         animator.SetBool("IsCrouching", isCrouching);
     }
 
+    private void Flip() {
+        // Switch the way the player is labelled as facing.
+        m_FacingRight = !m_FacingRight;
 
-    void FixedUpdate() {
-        controller.Move(horizontalSpeed_target * Time.fixedDeltaTime, crouching, jumping);
-
-
-        //float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime * (crouching ? crouchSpeed : 1);
-        //float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime * (crouching ? crouchSpeed : 1);
-        //MoveHorizontal(moveSpeedX);
-        //MoveVertical(moveSpeedY);
-    }
-
-    private void MoveHorizontal(float move) {
-        // Move the character by finding the target velocity
-        Vector2 targetVelocity = new Vector2(move * 10f, playerRigidbody2D.velocity.y);
-        // And then smoothing it out and applying it to the character
-        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
-    }
-
-    private void MoveVertical(float move) {
-        // Move the character by finding the target velocity
-        Vector2 targetVelocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
-        // And then smoothing it out and applying it to the character
-        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+        // Multiply the player's x local scale by -1.
+        Vector3 theScale = transform.localScale;
+        theScale.x *= -1;
+        transform.localScale = theScale;
     }
 
 
