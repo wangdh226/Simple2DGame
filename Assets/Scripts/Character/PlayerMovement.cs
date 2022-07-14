@@ -30,20 +30,25 @@ public class PlayerMovement : MonoBehaviour {
 
         if (Input.GetButtonDown("Crouch")) {
             crouch = true;
-            animator.SetBool("IsCrouching", true);
         } else if (Input.GetButtonUp("Crouch")) {
             crouch = false;
-            animator.SetBool("IsCrouching", false);
         }
     }
 
     public void OnLanding() {
         animator.SetBool("IsJumping", false);
+        jump = false;
     }
+
+    public void OnCrouching(bool isCrouching) {
+        crouch = isCrouching;
+        animator.SetBool("IsCrouching", isCrouching);
+    }
+
 
     void FixedUpdate() {
         controller.Move(horizontalSpeed * Time.fixedDeltaTime, crouch, jump);
-        jump = false;
+        
     }
 
 
