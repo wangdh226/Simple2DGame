@@ -4,110 +4,167 @@ using UnityEngine;
 
 public class NewPlayerMovementController : MonoBehaviour
 {
-    [SerializeField] public CharacterController2D controller;
-    [SerializeField] public Animator animator;
+    // References to update in Inspector
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private Transform ceilingCheck;
+    [SerializeField] private LayerMask whatIsGround;
+
+    // References to validate
+    [SerializeField] private Animator animator;
+    [SerializeField] private Rigidbody2D playerRigidbody2D;
+    [SerializeField] private BoxCollider2D playerBoxCollider2D;
+    [SerializeField] private CircleCollider2D playerCircleCollider2D;
+
+    // References with defaults
     [SerializeField] private float runSpeed = 40f;
     [SerializeField] private float jumpSpeed = 40f;
-    [SerializeField] private Rigidbody2D playerRigidbody2D;
+    [SerializeField] private float walkDebounce = 1.1f;
 
-    [SerializeField] private float walkDebounce;
-
+    // Private values with defaults
     private float horizontalSpeed = 0f;
     private float horizontalSpeed_target = 0f;
     private float verticalSpeed = 0f;
     private float verticalSpeed_target = 0f;
-    private float crouchSpeed = 0.33f;
+    
 
-    private Vector2 m_Velocity = Vector2.zero;
-    private float m_MovementSmoothing = .05f;
+    // Private stateful bools
+    private bool isJumping = false;
+    private bool isFalling = false;
+    private bool isCrouching = false;
+    private bool isGrounded = false;
+    private bool isFacingRight = true;
 
-    private bool jumping = false;
-    private bool crouching = false;
-    private bool grounded = false;
-
-    private bool m_FacingRight = true;
+    // Constants
+    private const float GROUNDED_RADIUS = .2f;
+    private Vector2 ZERO_VELOCITY = Vector2.zero;
+    private const float CROUCH_SPEED_MULTIPLIER = 0.33f;
+    private const float MOVEMENT_SMOOTHING_FACTOR = .05f;
 
     private void OnValidate() {
-        if (controller == null) {
-            TryGetComponent(out controller);
-        }
         if (animator == null) {
-            TryGetComponent(out animator);
+            TryGetComponent<Animator>(out animator);
         }
         if (playerRigidbody2D == null) {
-            TryGetComponent(out playerRigidbody2D);
+            TryGetComponent<Rigidbody2D>(out playerRigidbody2D);
+        }
+        if (playerBoxCollider2D == null) {
+            TryGetComponent<BoxCollider2D>(out playerBoxCollider2D);
+        }
+        if (playerCircleCollider2D == null) {
+            TryGetComponent<CircleCollider2D>(out playerCircleCollider2D);
         }
     }
 
     void Update() {
 
-        // Constantly update the velocities;
+        // Constantly update the velocities and send to Animator
         horizontalSpeed = playerRigidbody2D.velocity.x;
         verticalSpeed = playerRigidbody2D.velocity.y;
         animator.SetFloat("Horizontal_Speed", Mathf.Abs(horizontalSpeed));
         animator.SetFloat("Vertical_Speed", Mathf.Abs(verticalSpeed) > walkDebounce ? verticalSpeed : 0f);
-        //if(Mathf.Abs(verticalSpeed) > walkDebounce && !jumping) {
-        //    Debug.Log(verticalSpeed + " > " + walkDebounce);
-        //}
 
+        // Set horizontalSpeed_target for smoothdamp
         horizontalSpeed_target = Input.GetAxisRaw("Horizontal") * runSpeed;
 
-        //if (Input.GetButtonDown("Jump") && !jumping) {
-        //    jumping = true;
-        //    animator.SetBool("IsJumping", true);
-        //    verticalSpeed_target = jumpSpeed;
-        //} else if (jumping) {
-        //    verticalSpeed_target = 0f;
-        //}
+        if (Input.GetButtonDown("Jump") && isGrounded) {
+            isJumping = true;
+            animator.SetBool("IsJumping", true);
+            verticalSpeed_target = jumpSpeed;
+        } else if (Input.GetButtonUp("Jump")) {
+            verticalSpeed_target = playerRigidbody2D.gravityScale * -10f;
+        }
 
         if (Input.GetButtonDown("Crouch")) {
-            crouching = true;
+            isCrouching = true;
+            animator.SetBool("IsCrouching", true);
         } else if (Input.GetButtonUp("Crouch")) {
-            crouching = false;
+            isCrouching = false;
+            animator.SetBool("IsCrouching", false);
         }
     }
 
     void FixedUpdate() {
-        float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime * (crouching ? crouchSpeed : 1);
-        //float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime * (crouching ? crouchSpeed : 1);
-        //Debug.Log("1:" + moveSpeedX);
+
+        bool wasGrounded = isGrounded;
+        // The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
+        // MAKE SURE PLAYER LAYER IS NOT CHECKED!
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(groundCheck.position, GROUNDED_RADIUS, whatIsGround);
+        if(colliders.Length > 0) {
+            // If colliders exist(non player colliders)
+            foreach (Collider2D collider in colliders) {
+                if (collider.gameObject != gameObject) {
+                    // if found collider is not player collider, means contact with 'ground'
+                    // should never be player, unless WhatIsGround is not set properly
+                    isGrounded = true;
+                    if (!wasGrounded) {
+                        // if !wasGrounded in previous check => player was in air => player just landed
+                        OnLanding();
+                        IsFalling(false);
+                    }
+                }
+            }
+        } else {
+            // If no colliders exist => player is in the air
+            IsFalling(true);
+            isGrounded = false;
+        }
+
+
+
+        float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime * (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
         MoveHorizontal(moveSpeedX);
-        //MoveVertical(moveSpeedY);
+
+
+
+        float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime * (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
+        //Debug.Log("1:" + moveSpeedX);
+        if (isJumping) {
+            Debug.Log("Jumping");
+            MoveVertical(moveSpeedY);
+        }
     }
 
     private void MoveHorizontal(float move) {
         Vector2 targetVelocity = new Vector2(move * 10f, playerRigidbody2D.velocity.y);
-        //Debug.Log("2:" + targetVelocity);
-        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
-        //Debug.Log("3:" + playerRigidbody2D.velocity);
+        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref ZERO_VELOCITY, MOVEMENT_SMOOTHING_FACTOR);
 
         // Flip player sprite if moving in opposite direction of facing
-        if ((move > 0 && !m_FacingRight) || (move < 0 && m_FacingRight)) {
+        if ((move > 0 && !isFacingRight) || (move < 0 && isFacingRight)) {
             Flip();
         }
     }
 
     private void MoveVertical(float move) {
         Vector2 targetVelocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
-        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref ZERO_VELOCITY, MOVEMENT_SMOOTHING_FACTOR);
     }
 
 
-
+    
     // Utility/Helper methods
-    public void OnLanding() {
-        animator.SetBool("IsJumping", false);
-        jumping = false;
+    public void IsFalling(bool isFalling) {
+        Debug.Log("Invoke isFalling");
+        animator.SetBool("IsFalling", isFalling);
+        this.isFalling = isFalling;
     }
 
-    public void OnCrouching(bool isCrouching) {
-        crouching = isCrouching;
+    public void OnLanding() {
+        Debug.Log("Invoke OnLanding");
+        animator.SetBool("IsJumping", false);
+        isJumping = false;
+    }
+
+    public void IsCrouching(bool isCrouching) {
+        Debug.Log("Invoke IsCrouching");
+        this.isCrouching = isCrouching;
         animator.SetBool("IsCrouching", isCrouching);
     }
 
+
+
     private void Flip() {
         // Switch the way the player is labelled as facing.
-        m_FacingRight = !m_FacingRight;
+        isFacingRight = !isFacingRight;
 
         // Multiply the player's x local scale by -1.
         Vector3 theScale = transform.localScale;

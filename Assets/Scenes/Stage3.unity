@@ -3865,7 +3865,6 @@ GameObject:
   - component: {fileID: 1864347832}
   - component: {fileID: 1864347831}
   - component: {fileID: 1864347833}
-  - component: {fileID: 1864347830}
   - component: {fileID: 1864347840}
   - component: {fileID: 1864347837}
   - component: {fileID: 1864347839}
@@ -3877,58 +3876,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1864347830
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1864347829}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c24c06c62032bc24f92bf6728ad21f92, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_JumpForce: 700
-  m_CrouchSpeed: 0.4
-  m_MovementSmoothing: 0.05
-  m_AirControl: 1
-  m_WhatIsGround:
-    serializedVersion: 2
-    m_Bits: 247
-  m_GroundCheck: {fileID: 622489412}
-  m_CeilingCheck: {fileID: 1502586494}
-  m_CrouchDisableCollider: {fileID: 1864347839}
-  OnLandEvent:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1864347840}
-        m_TargetAssemblyTypeName: NewPlayerMovementController, Assembly-CSharp
-        m_MethodName: OnLanding
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnCrouchEvent:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1864347840}
-        m_TargetAssemblyTypeName: NewPlayerMovementController, Assembly-CSharp
-        m_MethodName: OnCrouching
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!212 &1864347831
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4093,10 +4040,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc68698ee6119da4db514084d6ef6d10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controller: {fileID: 1864347830}
+  groundCheck: {fileID: 622489412}
+  ceilingCheck: {fileID: 1502586494}
+  whatIsGround:
+    serializedVersion: 2
+    m_Bits: 247
   animator: {fileID: 1864347837}
-  runSpeed: 40
   playerRigidbody2D: {fileID: 1864347833}
+  playerBoxCollider2D: {fileID: 1864347839}
+  playerCircleCollider2D: {fileID: 1864347838}
+  runSpeed: 40
+  jumpSpeed: 40
   walkDebounce: 1.1
 --- !u!1 &2094239960
 GameObject:
@@ -4359,7 +4313,7 @@ Tilemap:
       - {fileID: 1349803446, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
       - {fileID: -614474227, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
       - {fileID: -259721028, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
-      m_AnimationSpeed: 24.000002
+      m_AnimationSpeed: 24
       m_AnimationTimeOffset: 0
       m_IsLooping: 1
   - first: {x: 17, y: -2, z: 0}
@@ -4425,7 +4379,7 @@ Tilemap:
       - {fileID: 1349803446, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
       - {fileID: -614474227, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
       - {fileID: -259721028, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
-      m_AnimationSpeed: 24.000002
+      m_AnimationSpeed: 24
       m_AnimationTimeOffset: 0
       m_IsLooping: 1
   - first: {x: -20, y: -1, z: 0}
@@ -4579,7 +4533,7 @@ Tilemap:
       - {fileID: 1349803446, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
       - {fileID: -614474227, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
       - {fileID: -259721028, guid: 3c3838bcc1075854f9eb3d4400fd395d, type: 3}
-      m_AnimationSpeed: 24.000002
+      m_AnimationSpeed: 24
       m_AnimationTimeOffset: 0
       m_IsLooping: 1
   - first: {x: 2, y: 2, z: 0}
