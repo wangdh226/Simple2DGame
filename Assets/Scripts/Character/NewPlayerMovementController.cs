@@ -16,8 +16,8 @@ public class NewPlayerMovementController : MonoBehaviour
     [SerializeField] private CircleCollider2D playerCircleCollider2D;
 
     // References with defaults
-    [SerializeField] private float runSpeed = 40f;
-    [SerializeField] private float jumpSpeed = 40f;
+    [SerializeField] private float runSpeed = 60f;
+    [SerializeField] private float jumpSpeed = 20f;
     [SerializeField] private float walkDebounce = 1.1f;
 
     // Private values with defaults
@@ -28,16 +28,17 @@ public class NewPlayerMovementController : MonoBehaviour
     
 
     // Private stateful bools
-    private bool isJumping = false;
-    private bool isFalling = false;
-    private bool isCrouching = false;
-    private bool isGrounded = false;
-    private bool isFacingRight = true;
+    private bool isJumping = false;     // Player press Space to send sprite into air
+    private bool isFalling = false;     // Player is in air without pressing Space
+    private bool isCrouching = false;   // Player press ctrl to make sprite crouch
+    private bool isGrounded = false;    // Player is on designated 'ground'
+    private bool isFacingRight = true;  // Player is facing right - left if false
 
     // Constants
     private const float GROUNDED_RADIUS = .2f;
     private Vector2 ZERO_VELOCITY = Vector2.zero;
     private const float CROUCH_SPEED_MULTIPLIER = 0.33f;
+    private const float AIR_SPEED_MULTIPLIER = 0.8f;
     private const float MOVEMENT_SMOOTHING_FACTOR = .05f;
 
     private void OnValidate() {
@@ -69,11 +70,11 @@ public class NewPlayerMovementController : MonoBehaviour
         if (Input.GetButtonDown("Jump") && isGrounded) {
             isJumping = true;
             animator.SetBool("IsJumping", true);
-            verticalSpeed_target = jumpSpeed;
+            verticalSpeed_target = jumpSpeed * playerRigidbody2D.gravityScale;
+            //MoveVertical(verticalSpeed_target * Time.fixedDeltaTime * (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1));
         } else if (Input.GetButtonUp("Jump")) {
             verticalSpeed_target = playerRigidbody2D.gravityScale * -10f;
         }
-
         if (Input.GetButtonDown("Crouch")) {
             isCrouching = true;
             animator.SetBool("IsCrouching", true);
@@ -111,14 +112,14 @@ public class NewPlayerMovementController : MonoBehaviour
 
 
 
-        float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime * (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
+        float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime;
+        moveSpeedX *= (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
+        moveSpeedX *= (!isGrounded ? AIR_SPEED_MULTIPLIER : 1);
         MoveHorizontal(moveSpeedX);
 
-
-
-        float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime * (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
-        //Debug.Log("1:" + moveSpeedX);
-        if (isJumping) {
+        float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime;
+        moveSpeedY *= (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
+        if (isJumping && isGrounded) {
             Debug.Log("Jumping");
             MoveVertical(moveSpeedY);
         }
@@ -135,10 +136,8 @@ public class NewPlayerMovementController : MonoBehaviour
     }
 
     private void MoveVertical(float move) {
-        Vector2 targetVelocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
-        playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref ZERO_VELOCITY, MOVEMENT_SMOOTHING_FACTOR);
+        playerRigidbody2D.velocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
     }
-
 
     
     // Utility/Helper methods
@@ -161,7 +160,6 @@ public class NewPlayerMovementController : MonoBehaviour
     }
 
 
-
     private void Flip() {
         // Switch the way the player is labelled as facing.
         isFacingRight = !isFacingRight;
@@ -171,6 +169,4 @@ public class NewPlayerMovementController : MonoBehaviour
         theScale.x *= -1;
         transform.localScale = theScale;
     }
-
-
 }
