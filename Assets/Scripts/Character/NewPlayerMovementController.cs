@@ -17,7 +17,7 @@ public class NewPlayerMovementController : MonoBehaviour
 
     // References with defaults
     [SerializeField] private float runSpeed = 60f;
-    [SerializeField] private float jumpSpeed = 20f;
+    [SerializeField] private float jumpSpeed = 17f;
     [SerializeField] private float walkDebounce = 1.1f;
 
     // Private values with defaults
@@ -33,11 +33,12 @@ public class NewPlayerMovementController : MonoBehaviour
     private bool isCrouching = false;   // Player press ctrl to make sprite crouch
     private bool isGrounded = false;    // Player is on designated 'ground'
     private bool isFacingRight = true;  // Player is facing right - left if false
-
+    
     // Constants
     private const float GROUNDED_RADIUS = .2f;
     private Vector2 ZERO_VELOCITY = Vector2.zero;
-    private const float CROUCH_SPEED_MULTIPLIER = 0.33f;
+    private const float CROUCH_RUN_MULTIPLIER = 0.33f;
+    private const float CROUCH_JUMP_MULTIPLIER = 0.8f;
     private const float AIR_SPEED_MULTIPLIER = 0.8f;
     private const float MOVEMENT_SMOOTHING_FACTOR = .05f;
 
@@ -62,25 +63,25 @@ public class NewPlayerMovementController : MonoBehaviour
         horizontalSpeed = playerRigidbody2D.velocity.x;
         verticalSpeed = playerRigidbody2D.velocity.y;
         animator.SetFloat("Horizontal_Speed", Mathf.Abs(horizontalSpeed));
-        animator.SetFloat("Vertical_Speed", Mathf.Abs(verticalSpeed) > walkDebounce ? verticalSpeed : 0f);
+        animator.SetFloat("Vertical_Speed", verticalSpeed);
 
         // Set horizontalSpeed_target for smoothdamp
         horizontalSpeed_target = Input.GetAxisRaw("Horizontal") * runSpeed;
 
+        // Check for jump input
         if (Input.GetButtonDown("Jump") && isGrounded) {
             isJumping = true;
-            animator.SetBool("IsJumping", true);
+            animator.SetBool("IsJumping", isJumping);
             verticalSpeed_target = jumpSpeed * playerRigidbody2D.gravityScale;
-            //MoveVertical(verticalSpeed_target * Time.fixedDeltaTime * (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1));
-        } else if (Input.GetButtonUp("Jump")) {
-            verticalSpeed_target = playerRigidbody2D.gravityScale * -10f;
-        }
+        } 
+
+        // Check for crouch input
         if (Input.GetButtonDown("Crouch")) {
             isCrouching = true;
-            animator.SetBool("IsCrouching", true);
+            animator.SetBool("IsCrouching", isCrouching);
         } else if (Input.GetButtonUp("Crouch")) {
             isCrouching = false;
-            animator.SetBool("IsCrouching", false);
+            animator.SetBool("IsCrouching", isCrouching);
         }
     }
 
@@ -100,32 +101,31 @@ public class NewPlayerMovementController : MonoBehaviour
                     if (!wasGrounded) {
                         // if !wasGrounded in previous check => player was in air => player just landed
                         OnLanding();
-                        IsFalling(false);
                     }
                 }
             }
         } else {
             // If no colliders exist => player is in the air
-            IsFalling(true);
+            OnFalling();
             isGrounded = false;
         }
 
-
-
+        // Calculate new horizontal move speed and implement
         float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime;
-        moveSpeedX *= (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
+        moveSpeedX *= (isCrouching ? CROUCH_RUN_MULTIPLIER : 1);
         moveSpeedX *= (!isGrounded ? AIR_SPEED_MULTIPLIER : 1);
         MoveHorizontal(moveSpeedX);
 
-        float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime;
-        moveSpeedY *= (isCrouching ? CROUCH_SPEED_MULTIPLIER : 1);
+        // Calculate new vertical move speed and implement
         if (isJumping && isGrounded) {
-            Debug.Log("Jumping");
+            float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime;
+            moveSpeedY *= (isCrouching ? CROUCH_JUMP_MULTIPLIER : 1);
             MoveVertical(moveSpeedY);
         }
     }
 
     private void MoveHorizontal(float move) {
+        // Calculate new target velocity and use SmoothDamp to accelerate to it
         Vector2 targetVelocity = new Vector2(move * 10f, playerRigidbody2D.velocity.y);
         playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref ZERO_VELOCITY, MOVEMENT_SMOOTHING_FACTOR);
 
@@ -136,37 +136,40 @@ public class NewPlayerMovementController : MonoBehaviour
     }
 
     private void MoveVertical(float move) {
+        // Sett new velocity and let gravity pull down
         playerRigidbody2D.velocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
     }
 
     
     // Utility/Helper methods
-    public void IsFalling(bool isFalling) {
-        Debug.Log("Invoke isFalling");
+    public void OnFalling() {
+        //Debug.Log("Invoke onFalling");
+        isFalling = true;
         animator.SetBool("IsFalling", isFalling);
-        this.isFalling = isFalling;
     }
 
     public void OnLanding() {
-        Debug.Log("Invoke OnLanding");
-        animator.SetBool("IsJumping", false);
+        //Debug.Log("Invoke OnLanding");
         isJumping = false;
+        isFalling = false;
+        isGrounded = true;
+        animator.SetBool("IsJumping", isJumping);
+        animator.SetBool("IsFalling", isFalling);
     }
 
     public void IsCrouching(bool isCrouching) {
-        Debug.Log("Invoke IsCrouching");
+        //Debug.Log("Invoke IsCrouching");
         this.isCrouching = isCrouching;
-        animator.SetBool("IsCrouching", isCrouching);
+        animator.SetBool("IsCrouching", this.isCrouching);
     }
-
 
     private void Flip() {
         // Switch the way the player is labelled as facing.
         isFacingRight = !isFacingRight;
 
         // Multiply the player's x local scale by -1.
-        Vector3 theScale = transform.localScale;
-        theScale.x *= -1;
-        transform.localScale = theScale;
+        Vector3 newScale = transform.localScale;
+        newScale.x *= -1;
+        transform.localScale = newScale;
     }
 }
