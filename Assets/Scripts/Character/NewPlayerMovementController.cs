@@ -31,6 +31,7 @@ public class NewPlayerMovementController : MonoBehaviour {
     private bool isFalling = false;     // Player is in air without pressing Space
     private bool isCrouching = false;   // Player press ctrl to make sprite crouch
     private bool wasCrouching = false;  // Store for previous Crouch state
+    private bool isUnderCeiling = false;// Store for whether there is hitbox above player
     private bool isGrounded = false;    // Player is on designated 'ground'
     private bool wasGrounded = false;   // Store for previous Grounded state
     private bool isFacingRight = true;  // Player is facing right - left if false
@@ -64,34 +65,14 @@ public class NewPlayerMovementController : MonoBehaviour {
      */
     void Update() {
 
-        // Set horizontalSpeed_target for smoothdamp
-        horizontalSpeed_target = Input.GetAxisRaw("Horizontal") * runSpeed;
-
-        // Check for jump input and set verticalSpeed_target
-        if (Input.GetButtonDown("Jump") && isGrounded) {
-            isJumping = true;
-            
+        // Check if player is in contact with a ceiling
+        if (Physics2D.OverlapCircle(ceilingCheck.position, CEILING_RADIUS, whatIsGround)) {
+            isUnderCeiling = true;
+            Debug.Log("isUnderCeiling = " + isUnderCeiling);
+        } else {
+            isUnderCeiling = false;
+            Debug.Log("isUnderCeiling = " + isUnderCeiling);
         }
-
-        // Check for crouch input and set state
-        if (Input.GetButton("Crouch") && !isJumping) {
-            isCrouching = true;
-            wasCrouching = true;
-        } else if (!Input.GetButton("Crouch") && wasCrouching) {
-            isCrouching = false;
-        }
-
-        //If uncrouching, check if ceiling is there.
-        if (wasCrouching && !isCrouching) {
-            if (Physics2D.OverlapCircle(ceilingCheck.position, CEILING_RADIUS, whatIsGround)) {
-                isCrouching = true;
-                isJumping = false;
-            } else {
-                isCrouching = false;
-            }
-        }
-        wasCrouching = isCrouching;
-        Debug.Log(isJumping);
 
         // Check if player is grounded or not
         // The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
@@ -104,10 +85,32 @@ public class NewPlayerMovementController : MonoBehaviour {
                 OnLanding();
             }
         } else {
+            isGrounded = false;
             // If no colliders exist => player is in the air
             OnFalling();
-            isGrounded = false;
         }
+
+        // Set horizontalSpeed_target for smoothdamp
+        horizontalSpeed_target = Input.GetAxisRaw("Horizontal") * runSpeed;
+
+        // Check for jump input and set verticalSpeed_target
+        if (Input.GetButtonDown("Jump") && isGrounded && !isUnderCeiling) {
+            isJumping = true;
+            verticalSpeed_target = jumpSpeed * playerRigidbody2D.gravityScale;
+        }
+
+        // Check for crouch input and set state
+        if (Input.GetButton("Crouch") && !isJumping) {
+            isCrouching = true;
+        } else if (!Input.GetButton("Crouch") && wasCrouching) {
+            if (isUnderCeiling) {
+                isCrouching = true;
+            } else {
+                isCrouching = false;
+            }
+            
+        }
+        wasCrouching = isCrouching;
     }
 
     /** Method to update player every frame - moving/crouching/jumping etc
@@ -135,7 +138,6 @@ public class NewPlayerMovementController : MonoBehaviour {
         // Calculate new vertical move speed and implement
         //Debug.Log(isJumping + ": " + isGrounded);
         if (isJumping && isGrounded) {
-            verticalSpeed_target = jumpSpeed * playerRigidbody2D.gravityScale;
             float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime;
             moveSpeedY *= (isCrouching ? CROUCH_JUMP_MULTIPLIER : 1f);
             MoveVertical(moveSpeedY);
@@ -188,8 +190,6 @@ public class NewPlayerMovementController : MonoBehaviour {
         if (playerBoxCollider2D != null) {
             playerBoxCollider2D.enabled = !this.isCrouching;
         }
-
-
         animator.SetBool("IsCrouching", this.isCrouching);
     }
 
