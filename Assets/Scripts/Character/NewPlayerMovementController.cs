@@ -2,7 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/** Controller that acts like a state machine for player animations and movement.
+ *    Class that manages player movement and animations:
+ *    Idle, Run, Jump, Fall, Crouch
+ */
 public class NewPlayerMovementController : MonoBehaviour {
+    
     // References to update in Inspector
     [SerializeField] private Transform groundCheck;
     [SerializeField] private Transform ceilingCheck;
@@ -13,6 +18,7 @@ public class NewPlayerMovementController : MonoBehaviour {
     [SerializeField] private Rigidbody2D playerRigidbody2D;
     [SerializeField] private BoxCollider2D playerBoxCollider2D;
     [SerializeField] private CircleCollider2D playerCircleCollider2D;
+    [SerializeField] private SpriteRenderer playerSpriteRenderer;
 
     // References with defaults
     [SerializeField] private float runSpeed = 60f;
@@ -58,21 +64,18 @@ public class NewPlayerMovementController : MonoBehaviour {
         if (playerCircleCollider2D == null) {
             TryGetComponent<CircleCollider2D>(out playerCircleCollider2D);
         }
+        if (playerSpriteRenderer == null) {
+            TryGetComponent<SpriteRenderer>(out playerSpriteRenderer);
+        }
     }
 
-    /** Method to update player states - is* bools
+    /** Method that runs whenever possible(CPU/Unity limit) to update player states - is* bools
      *  I think this method runs *more often* than FixedUpdate, so use as continuous update for state
      */
     void Update() {
 
         // Check if player is in contact with a ceiling
-        if (Physics2D.OverlapCircle(ceilingCheck.position, CEILING_RADIUS, whatIsGround)) {
-            isUnderCeiling = true;
-            Debug.Log("isUnderCeiling = " + isUnderCeiling);
-        } else {
-            isUnderCeiling = false;
-            Debug.Log("isUnderCeiling = " + isUnderCeiling);
-        }
+        isUnderCeiling = Physics2D.OverlapCircle(ceilingCheck.position, CEILING_RADIUS, whatIsGround);
 
         // Check if player is grounded or not
         // The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
@@ -82,10 +85,13 @@ public class NewPlayerMovementController : MonoBehaviour {
             isGrounded = true;
             if (!wasGrounded) {
                 // if !wasGrounded in previous check => player was in air => player just landed
+                isJumping = false;
+                isFalling = false;
                 OnLanding();
             }
         } else {
             isGrounded = false;
+            isFalling = true;
             // If no colliders exist => player is in the air
             OnFalling();
         }
@@ -95,15 +101,19 @@ public class NewPlayerMovementController : MonoBehaviour {
 
         // Check for jump input and set verticalSpeed_target
         if (Input.GetButtonDown("Jump") && isGrounded && !isUnderCeiling) {
+            // When player presses Jump key, is on ground, and not under a ceiling,
+            // Set jumping, update verticalSpeed_target
             isJumping = true;
             verticalSpeed_target = jumpSpeed * playerRigidbody2D.gravityScale;
         }
 
         // Check for crouch input and set state
         if (Input.GetButton("Crouch") && !isJumping) {
+            // When player presses Crouch key, and is not jumping, crouch
             isCrouching = true;
         } else if (!Input.GetButton("Crouch") && wasCrouching) {
-            if (isUnderCeiling) {
+            // If player is not holding Crouch key, and was crouching before, attempt to uncrouch
+            if (isUnderCeiling) { // don't uncrouch if there is something above the player
                 isCrouching = true;
             } else {
                 isCrouching = false;
@@ -118,16 +128,15 @@ public class NewPlayerMovementController : MonoBehaviour {
      */
     void FixedUpdate() {
         // Constantly update the velocities and send to Animator
-        horizontalSpeed = playerRigidbody2D.velocity.x;
-        verticalSpeed = playerRigidbody2D.velocity.y;
-        animator.SetFloat("Horizontal_Speed", Mathf.Abs(horizontalSpeed));
-        animator.SetFloat("Vertical_Speed", verticalSpeed);
+        animator.SetFloat("Horizontal_Speed", Mathf.Abs(playerRigidbody2D.velocity.x));
+        animator.SetFloat("Vertical_Speed", playerRigidbody2D.velocity.y);
 
-        IsJumping(isJumping);
-        IsCrouching(isCrouching);
+        IsJumping();
+        IsCrouching();
         Move();
     }
-
+    
+    // Player Movement methods
     private void Move() {
         // Calculate new horizontal move speed and implement
         float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime;
@@ -159,47 +168,31 @@ public class NewPlayerMovementController : MonoBehaviour {
         // Sett new velocity and let gravity pull down
         playerRigidbody2D.velocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
     }
+   
+    private void Flip() {
+        // Switch the way the player is labelled as facing.
+        isFacingRight = !isFacingRight;
+        playerSpriteRenderer.flipX = !isFacingRight;
+    }
 
-
-    // Utility/Helper methods
+    // Animator Update methods
     private void OnFalling() {
-        //Debug.Log("Invoke onFalling");
-        isFalling = true;
         animator.SetBool("IsFalling", isFalling);
     }
 
     private void OnLanding() {
-        //Debug.Log("Invoke OnLanding");
-        isJumping = false;
-        isFalling = false;
-        isGrounded = true;
         animator.SetBool("IsJumping", isJumping);
         animator.SetBool("IsFalling", isFalling);
     }
 
-    private void IsJumping(bool isJumping) {
-        //Debug.Log("Invoke IsJumping");
-        this.isJumping = isJumping;
+    private void IsJumping() {
         animator.SetBool("IsJumping", isJumping);
     }
 
-    private void IsCrouching(bool isCrouching) {
-        //Debug.Log("Invoke IsCrouching");
-        this.isCrouching = isCrouching;
-
+    private void IsCrouching() {
         if (playerBoxCollider2D != null) {
             playerBoxCollider2D.enabled = !this.isCrouching;
         }
         animator.SetBool("IsCrouching", this.isCrouching);
-    }
-
-    private void Flip() {
-        // Switch the way the player is labelled as facing.
-        isFacingRight = !isFacingRight;
-
-        // Multiply the player's x local scale by -1.
-        Vector3 newScale = transform.localScale;
-        newScale.x *= -1;
-        transform.localScale = newScale;
     }
 }
