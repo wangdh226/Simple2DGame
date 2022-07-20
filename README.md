@@ -16,4 +16,11 @@ Among these include:
 * **Camera** - Spent some time trying to manipulate the Main Camera before learning about Cinemachine and virtual cameras. Now using virtual cam to follow player movement, and maybe add a some extra lookahead functionality in future(lookdown + lookup).
 * **TileMaps** - Spent time learning how to use Tilemaps, Tile Palettes, Sorting Layers, Layers, and Sprites(and editor).
 
+## Other information
+I have several other ideas I might take time to implement in the future, but I think I'd like to start another project from scratch now.
+I might take some time to polish up some stuff in the game so I can add it to my portfolio, but also this repo could suffice??
+
+Please find the Trello board here: https://trello.com/b/ycA02Bwd/simple2dgame
+
+The Trello board has ideas for several future features I'd implement if I came back to this project. Also could just add them to the next game...?
 
