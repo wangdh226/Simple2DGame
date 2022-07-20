@@ -12,6 +12,9 @@ public class NewPlayerMovementController : MonoBehaviour {
     [SerializeField] private Transform groundCheck;
     [SerializeField] private Transform ceilingCheck;
     [SerializeField] private LayerMask whatIsGround;
+    [SerializeField] private PhysicsMaterial2D materialFrictionless;
+    [SerializeField] private PhysicsMaterial2D materialHighFriction;
+    [SerializeField] private PhysicsMaterial2D materialSlopeFriction;
 
     // References to validate
     [SerializeField] private Animator animator;
@@ -23,7 +26,6 @@ public class NewPlayerMovementController : MonoBehaviour {
     // References with defaults
     [SerializeField] private float runSpeed = 60f;
     [SerializeField] private float jumpSpeed = 17f;
-    [SerializeField] private float walkDebounce = 1.1f;
 
     // Private values with defaults
     private float horizontalSpeed = 0f;
@@ -31,6 +33,8 @@ public class NewPlayerMovementController : MonoBehaviour {
     private float verticalSpeed = 0f;
     private float verticalSpeed_target = 0f;
 
+    private float slopeAngle = 0f;
+    private Vector2 slopeVector;
 
     // Private stateful bools
     private bool isJumping = false;     // Player press Space to send sprite into air
@@ -41,6 +45,9 @@ public class NewPlayerMovementController : MonoBehaviour {
     private bool isGrounded = false;    // Player is on designated 'ground'
     private bool wasGrounded = false;   // Store for previous Grounded state
     private bool isFacingRight = true;  // Player is facing right - left if false
+    private bool isOnSlope = false;
+    private bool isUpSlope = false;
+    private bool isDownSlope = false;
 
     // Constants
     private const float GROUNDED_RADIUS = 0.2f;
@@ -129,7 +136,7 @@ public class NewPlayerMovementController : MonoBehaviour {
     void FixedUpdate() {
         // Constantly update the velocities and send to Animator
         animator.SetFloat("Horizontal_Speed", Mathf.Abs(playerRigidbody2D.velocity.x));
-        animator.SetFloat("Vertical_Speed", playerRigidbody2D.velocity.y);
+        animator.SetFloat("Vertical_Speed", (Mathf.Abs(playerRigidbody2D.velocity.y) > 0.001 ? playerRigidbody2D.velocity.y : 0f));
 
         IsJumping();
         IsCrouching();
@@ -138,35 +145,94 @@ public class NewPlayerMovementController : MonoBehaviour {
     
     // Player Movement methods
     private void Move() {
+        //Debug.Log(playerRigidbody2D.velocity.x);
+
         // Calculate new horizontal move speed and implement
-        float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime;
+        float moveSpeedX = horizontalSpeed_target * Time.fixedDeltaTime * 10f;
+        //moveSpeedX += moveSpeedX * (isOnSlope ? -slopeNormalPerp.x : 0f);
         moveSpeedX *= (isCrouching ? CROUCH_RUN_MULTIPLIER : 1f);
         moveSpeedX *= (!isGrounded ? AIR_SPEED_MULTIPLIER : 1f);
-        MoveHorizontal(moveSpeedX);
+        playerRigidbody2D.velocity = new Vector2(moveSpeedX, playerRigidbody2D.velocity.y);
+        //MoveHorizontal(moveSpeedX); // doesn't work with current iteration of slopes
+
 
         // Calculate new vertical move speed and implement
-        //Debug.Log(isJumping + ": " + isGrounded);
-        if (isJumping && isGrounded) {
-            float moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime;
-            moveSpeedY *= (isCrouching ? CROUCH_JUMP_MULTIPLIER : 1f);
-            MoveVertical(moveSpeedY);
-        }
+        float moveSpeedY = 1f;
+        // If player is on ground, check for slope and/or jumping
+        if (isGrounded) {
+            playerCircleCollider2D.sharedMaterial = materialHighFriction;
+            // Check for slope
+            SlopeCheck();
+            if (isJumping) {
+                moveSpeedY = verticalSpeed_target * Time.fixedDeltaTime * 10f;
+                moveSpeedY *= (isCrouching ? CROUCH_JUMP_MULTIPLIER : 1f);
+                playerRigidbody2D.velocity = new Vector2(playerRigidbody2D.velocity.x, moveSpeedY);
+            } else if (isOnSlope) {
+                if (isUpSlope && Mathf.Abs(horizontalSpeed_target) > 0f) {
+                    playerCircleCollider2D.sharedMaterial = materialSlopeFriction;
+                } else if (isDownSlope && Mathf.Abs(horizontalSpeed_target) > 0f) {
+                    playerCircleCollider2D.sharedMaterial = materialHighFriction;
+                }
+            }
+        } 
 
         // Flip player sprite if moving in opposite direction of facing
-        if ((moveSpeedX > 0 && !isFacingRight) || (moveSpeedX < 0 && isFacingRight)) {
+        if ((horizontalSpeed_target > 0 && !isFacingRight) || (horizontalSpeed_target < 0 && isFacingRight)) {
             Flip();
+        }
+    }
+
+    private void SlopeCheck() {
+        // Some maths
+        Vector2 colliderPos = playerCircleCollider2D.transform.position;    // center of the CircleCollider2D(center of player)
+        colliderPos += playerCircleCollider2D.offset;                       // add offset to find 'actual' center of CircleCollider2D
+        // CircleCast around CircleCollider to check for whatIsGround colliders
+        RaycastHit2D hit = Physics2D.CircleCast(colliderPos, playerCircleCollider2D.radius + 0.01f, Vector2.down, 0.01f, whatIsGround);
+
+        if (hit) {
+            slopeVector = Vector2.Perpendicular(hit.normal).normalized * (isFacingRight ? -1f : 1f); // Angle of slope(*facing) 
+            slopeAngle = Vector2.SignedAngle(Vector2.up, slopeVector); // Angle between slope and Up
+            Debug.Log(slopeAngle + ": " + isUpSlope + ": " + isDownSlope);
+
+            // Check slopeAngle sign and magnitude
+            if (Mathf.Abs(slopeAngle) < 90f && slopeAngle < 0f) {
+                // Is on Up slope, facing right
+                isOnSlope = true;
+                isUpSlope = true;
+                isDownSlope = false;
+            } else if (Mathf.Abs(slopeAngle) < 90f && slopeAngle > 0f) {
+                // Is on Up slope, facing left
+                isOnSlope = true;
+                isUpSlope = true;
+                isDownSlope = false;
+            } else if (Mathf.Abs(slopeAngle) > 90f) {
+                // Is on down slope
+                isOnSlope = true;
+                isUpSlope = false;
+                isDownSlope = true;
+            } else if (Mathf.Abs(slopeAngle) == 90f) {
+                // Not on slope
+                isOnSlope = false;
+                isUpSlope = false;
+                isDownSlope = false;
+            }
+
+            Debug.DrawRay(hit.point, hit.normal, Color.green);
+            Debug.DrawRay(hit.point, slopeVector, Color.red); // angle of slope(tan of circlecast)
+            Debug.DrawRay(hit.point, new Vector2(slopeVector.x, 0f), Color.blue); // X of angle of slope
+            Debug.DrawRay(hit.point, new Vector2(0f, slopeVector.y), Color.cyan); // Y of angle of slope
         }
     }
 
     private void MoveHorizontal(float move) {
         // Calculate new target velocity and use SmoothDamp to accelerate to it
-        Vector2 targetVelocity = new Vector2(move * 10f, playerRigidbody2D.velocity.y);
+        Vector2 targetVelocity = new Vector2(move, playerRigidbody2D.velocity.y);
         playerRigidbody2D.velocity = Vector2.SmoothDamp(playerRigidbody2D.velocity, targetVelocity, ref ZERO_VELOCITY, MOVEMENT_SMOOTHING_FACTOR);
     }
 
     private void MoveVertical(float move) {
-        // Sett new velocity and let gravity pull down
-        playerRigidbody2D.velocity = new Vector2(playerRigidbody2D.velocity.x, move * 10f);
+        // Set new velocity and let gravity pull down
+        playerRigidbody2D.velocity = new Vector2(playerRigidbody2D.velocity.x, move);
     }
    
     private void Flip() {
@@ -177,15 +243,20 @@ public class NewPlayerMovementController : MonoBehaviour {
 
     // Animator Update methods
     private void OnFalling() {
+        playerCircleCollider2D.sharedMaterial = materialFrictionless;
         animator.SetBool("IsFalling", isFalling);
     }
 
     private void OnLanding() {
+        playerCircleCollider2D.sharedMaterial = materialHighFriction;
         animator.SetBool("IsJumping", isJumping);
         animator.SetBool("IsFalling", isFalling);
     }
 
     private void IsJumping() {
+        if (isJumping) {
+            playerCircleCollider2D.sharedMaterial = materialFrictionless;
+        }
         animator.SetBool("IsJumping", isJumping);
     }
 
