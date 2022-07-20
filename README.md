@@ -14,6 +14,6 @@ Among these include:
 * **OnValidate** - Developed workflow for automatically finding components in Inspector via OnValidate workflow, instead of just using GetComponent everywhere.
 * **Vectors** - Practice using and manipulating Vectors to determine various game state interactions
 * **Camera** - Spent some time trying to manipulate the Main Camera before learning about Cinemachine and virtual cameras. Now using virtual cam to follow player movement, and maybe add a some extra lookahead functionality in future(lookdown + lookup).
-
+* **TileMaps** - Spent time learning how to use Tilemaps, Tile Palettes, Sorting Layers, Layers, and Sprites(and editor).
 
 
