@@ -7,7 +7,7 @@ public class PlayerStateFall : PlayerState {
     public override void EnterState(PlayerStateManager player) {
         Debug.Log("Entering Fall state");
 
-        player.animator.SetBool("IsFalling", true);
+        UpdateAnimatorState(player, "IsFalling");
     }
 
     public override void UpdateState(PlayerStateManager player) {

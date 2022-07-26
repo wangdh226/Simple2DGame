@@ -7,7 +7,7 @@ public class PlayerStateJump : PlayerState {
     public override void EnterState(PlayerStateManager player) {
         Debug.Log("Entering Jump state");
 
-        player.animator.SetBool("IsJumping", true);
+        UpdateAnimatorState(player, "IsJumping");
     }
 
     public override void UpdateState(PlayerStateManager player) {

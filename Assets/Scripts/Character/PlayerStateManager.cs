@@ -21,7 +21,7 @@ public class PlayerStateManager : MonoBehaviour {
     [SerializeField] public SpriteRenderer playerSpriteRenderer;
 
     // References with defaults
-    [SerializeField] private float runSpeed = 60f;
+    [SerializeField] public float runSpeed = 60f;
     [SerializeField] private float jumpSpeed = 17f;
 
     // Private values with defaults
@@ -77,7 +77,7 @@ public class PlayerStateManager : MonoBehaviour {
 
     void Update() {
         currentState.UpdateState(this);
-        Move(currentState.horizontalSpeed_target, currentState.verticalSpeed_target);
+        Move(currentState.getHorizontalSpeed, currentState.getVerticalSpeed);
 
         animator.SetFloat("Horizontal_Speed", Mathf.Abs(playerRigidbody2D.velocity.x));
         animator.SetFloat("Vertical_Speed", (Mathf.Abs(playerRigidbody2D.velocity.y) > 0.001 ? playerRigidbody2D.velocity.y : 0f));
@@ -94,7 +94,12 @@ public class PlayerStateManager : MonoBehaviour {
 
     public void Move(float horizontalSpeed, float verticalSpeed) {
         float moveSpeedX = horizontalSpeed * Time.fixedDeltaTime * 10f;
+        moveSpeedX *= (currentState == crouchState ? CROUCH_RUN_MULTIPLIER : 1f);
+        moveSpeedX *= (currentState == jumpState || currentState == fallState ? AIR_SPEED_MULTIPLIER : 1f);
+
         float moveSpeedY = verticalSpeed * Time.fixedDeltaTime * 10f;
-        playerRigidbody2D.velocity = new Vector2(moveSpeedX, moveSpeedY);
+        moveSpeedX *= (currentState == crouchState ? CROUCH_JUMP_MULTIPLIER : 1f);
+
+        playerRigidbody2D.velocity = new Vector2(moveSpeedX, (moveSpeedY == 0f ? playerRigidbody2D.velocity.y : moveSpeedY));
     }
 }

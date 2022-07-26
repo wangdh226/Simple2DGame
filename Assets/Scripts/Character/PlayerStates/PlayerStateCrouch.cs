@@ -9,7 +9,7 @@ public class PlayerStateCrouch : PlayerState {
     public override void EnterState(PlayerStateManager player) {
         Debug.Log("Entering Crouch state");
 
-        player.animator.SetBool("IsCrouching", true);
+        UpdateAnimatorState(player, "IsCrouching");
     }
 
     public override void UpdateState(PlayerStateManager player) {
@@ -17,7 +17,6 @@ public class PlayerStateCrouch : PlayerState {
         Vector2 colliderPos = player.playerBoxCollider2D.transform.position;
         colliderPos += player.playerBoxCollider2D.offset;
         RaycastHit2D hit = Physics2D.BoxCast(colliderPos, player.playerBoxCollider2D.size, 0f, Vector2.up, 0.01f, player.whatIsGround);
-
         // Update state if player is under ceiling
         isUnderCeiling = hit.Equals(null);
 
@@ -27,6 +26,10 @@ public class PlayerStateCrouch : PlayerState {
             if (!isUnderCeiling) { // don't uncrouch if there is something above the player
                 player.SwitchState(player.idleState);
             }
+        } else if (Input.GetButtonDown("Jump")) {
+            //player.SwitchState(player.jumpState); // crouch jump?
+        } else if (Input.GetAxisRaw("Horizontal") != 0) {
+            horizontalSpeed = Input.GetAxisRaw("Horizontal") * player.runSpeed;
         }
     }
 
