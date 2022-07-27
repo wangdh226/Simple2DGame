@@ -6,10 +6,17 @@ public class PlayerStateCrouch : PlayerState {
 
     private bool isUnderCeiling = false;
 
-    public override void EnterState(PlayerStateManager player) {
+    public override void EnterState(PlayerStateManager player, PlayerState prevState) {
         Debug.Log("Entering Crouch state");
+        horizontalSpeed = player.playerRigidbody2D.velocity.x;
+        //verticalSpeed = player.playerRigidbody2D.velocity.y;
 
         UpdateAnimatorState(player, "IsCrouching");
+    }
+
+    public override void ResetState() {
+        horizontalSpeed = 0f;
+        verticalSpeed = 0f;
     }
 
     public override void UpdateState(PlayerStateManager player) {
@@ -28,8 +35,12 @@ public class PlayerStateCrouch : PlayerState {
             }
         } else if (Input.GetButtonDown("Jump")) {
             //player.SwitchState(player.jumpState); // crouch jump?
-        } else if (Input.GetAxisRaw("Horizontal") != 0) {
-            horizontalSpeed = Input.GetAxisRaw("Horizontal") * player.runSpeed;
+        } 
+        horizontalSpeed = Input.GetAxisRaw("Horizontal") * player.runSpeed;
+
+        // Check for falling: if player is not on ground, and falling velocity < threshold(debounce)
+        if (!GroundCheck(player) && player.playerRigidbody2D.velocity.y < fallSpeedThreshold) {
+            player.SwitchState(player.fallState);
         }
     }
 

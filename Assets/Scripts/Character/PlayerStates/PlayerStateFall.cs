@@ -4,10 +4,20 @@ using UnityEngine;
 
 public class PlayerStateFall : PlayerState {
 
-    public override void EnterState(PlayerStateManager player) {
+    public override void EnterState(PlayerStateManager player, PlayerState prevState) {
         Debug.Log("Entering Fall state");
+        horizontalSpeed = player.playerRigidbody2D.velocity.x;
+        //verticalSpeed = player.playerRigidbody2D.velocity.y;
 
-        UpdateAnimatorState(player, "IsFalling");
+        this.prevState = prevState;
+        if (prevState != player.crouchState) {
+            UpdateAnimatorState(player, "IsFalling");
+        }
+    }
+
+    public override void ResetState() {
+        horizontalSpeed = 0f;
+        verticalSpeed = 0f;
     }
 
     public override void UpdateState(PlayerStateManager player) {
@@ -17,7 +27,13 @@ public class PlayerStateFall : PlayerState {
         RaycastHit2D hit = Physics2D.CircleCast(colliderPos, player.playerCircleCollider2D.radius + 0.01f, Vector2.down, 0.01f, player.whatIsGround);
 
         if (hit) {
-            player.SwitchState(player.idleState);
+            if (prevState == player.crouchState) {
+                player.SwitchState(player.crouchState);
+            } else if (prevState == player.runState) {
+                player.SwitchState(player.runState);
+            } else {
+                player.SwitchState(player.idleState);
+            }
         }
     }
 

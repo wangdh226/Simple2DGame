@@ -8,9 +8,16 @@ public abstract class PlayerState {
     public float getVerticalSpeed { get { return verticalSpeed; } }
     private protected float verticalSpeed;
 
-    public abstract void EnterState(PlayerStateManager player);
+    private float groundCheckCastDistance = 0.3f;
+    private protected float fallSpeedThreshold = 0.3f;
+    private protected PlayerState prevState;
+
+    public abstract void EnterState(PlayerStateManager player, PlayerState prevState);
+    public abstract void ResetState();
     public abstract void UpdateState(PlayerStateManager player);
+
     public abstract void OnCollisionEnter(PlayerStateManager player, Collision collision);
+
 
     public void UpdateAnimatorState(PlayerStateManager player, string newState) {
         // Disable all animator bools
@@ -22,6 +29,15 @@ public abstract class PlayerState {
 
         // Enable the newState
         player.animator.SetBool(newState, true);
+    }
+
+    private protected RaycastHit2D GroundCheck(PlayerStateManager player) {
+        Vector2 colliderPos = player.playerCircleCollider2D.transform.position;    // center of the CircleCollider2D(center of player)
+        colliderPos += player.playerCircleCollider2D.offset;                       // add offset to find 'actual' center of CircleCollider2D
+        float colliderRadius = player.playerCircleCollider2D.radius;
+        // CircleCast below CircleCollider to check for whatIsGround colliders
+        RaycastHit2D hit = Physics2D.CircleCast(colliderPos, colliderRadius, Vector2.down, groundCheckCastDistance, player.whatIsGround);
+        return hit;
     }
 
 

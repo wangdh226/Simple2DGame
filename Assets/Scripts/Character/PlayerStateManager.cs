@@ -25,11 +25,10 @@ public class PlayerStateManager : MonoBehaviour {
     [SerializeField] private float jumpSpeed = 17f;
 
     // Private values with defaults
-    private float horizontalSpeed = 0f;
-    private float verticalSpeed = 0f;
-
     private float slopeAngle = 0f;
     private Vector2 slopeVector;
+    private bool isFacingRight = false;
+
 
     // Constants
     private const float CROUCH_RUN_MULTIPLIER = 0.33f;
@@ -72,20 +71,32 @@ public class PlayerStateManager : MonoBehaviour {
 
     void Start() {
         currentState = idleState;
-        currentState.EnterState(this);
+        currentState.EnterState(this, idleState);
+
+        isFacingRight = !playerSpriteRenderer.flipX;
     }
 
     void Update() {
         currentState.UpdateState(this);
-        Move(currentState.getHorizontalSpeed, currentState.getVerticalSpeed);
 
         animator.SetFloat("Horizontal_Speed", Mathf.Abs(playerRigidbody2D.velocity.x));
         animator.SetFloat("Vertical_Speed", (Mathf.Abs(playerRigidbody2D.velocity.y) > 0.001 ? playerRigidbody2D.velocity.y : 0f));
     }
 
+    private void FixedUpdate() {
+        Move(currentState.getHorizontalSpeed, currentState.getVerticalSpeed);
+
+        if ((currentState.getHorizontalSpeed > 0 && !isFacingRight) || (currentState.getHorizontalSpeed < 0 && isFacingRight)) {
+            playerSpriteRenderer.flipX = !playerSpriteRenderer.flipX;
+            isFacingRight = !playerSpriteRenderer.flipX;
+        }
+    }
+
     public void SwitchState(PlayerState newState) {
+        PlayerState prevState = currentState;
+        currentState.ResetState();
         currentState = newState;
-        currentState.EnterState(this);
+        currentState.EnterState(this, prevState);
     }
 
     void OnCollisionEnter(Collision collision) {
