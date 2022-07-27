@@ -5,9 +5,8 @@ using UnityEngine;
 public class PlayerStateFall : PlayerState {
 
     public override void EnterState(PlayerStateManager player, PlayerState prevState) {
-        Debug.Log("Entering Fall state");
+        //Debug.Log("Entering Fall state");
         horizontalSpeed = player.playerRigidbody2D.velocity.x;
-        //verticalSpeed = player.playerRigidbody2D.velocity.y;
 
         this.prevState = prevState;
         if (prevState != player.crouchState) {
@@ -15,26 +14,42 @@ public class PlayerStateFall : PlayerState {
         }
     }
 
-    public override void ResetState() {
+    public override void ResetState(PlayerStateManager player) {
         horizontalSpeed = 0f;
         verticalSpeed = 0f;
     }
 
     public override void UpdateState(PlayerStateManager player) {
-        Vector2 colliderPos = player.playerCircleCollider2D.transform.position;    // center of the CircleCollider2D(center of player)
-        colliderPos += player.playerCircleCollider2D.offset;                       // add offset to find 'actual' center of CircleCollider2D
-        // CircleCast around CircleCollider to check for whatIsGround colliders
-        RaycastHit2D hit = Physics2D.CircleCast(colliderPos, player.playerCircleCollider2D.radius + 0.01f, Vector2.down, 0.01f, player.whatIsGround);
 
+        // Change 'prevState' based on player input
+        // Since the state change only happens when hitting the ground,
+          // constantly update next state based on player input while falling
+        if (Input.GetButton("Crouch")) {
+            prevState = player.crouchState;
+        } else if (Input.GetButton("Jump")) {
+            prevState = player.jumpState;
+        } else if (Input.GetAxisRaw("Horizontal") != 0) {
+            prevState = player.runState;
+        } else {
+            // If player is not inputting at the moment of landing, return to idle
+            prevState = player.idleState;
+        }
+
+        RaycastHit2D hit = GroundCheck(player);
+        // Check what the state was before entering fall, and return to it
         if (hit) {
             if (prevState == player.crouchState) {
                 player.SwitchState(player.crouchState);
+            } else if (prevState == player.jumpState) {
+                player.SwitchState(player.jumpState);
             } else if (prevState == player.runState) {
                 player.SwitchState(player.runState);
             } else {
                 player.SwitchState(player.idleState);
             }
         }
+
+        horizontalSpeed = Input.GetAxisRaw("Horizontal") * player.runSpeed;
     }
 
     public override void OnCollisionEnter(PlayerStateManager player, Collision collision) {

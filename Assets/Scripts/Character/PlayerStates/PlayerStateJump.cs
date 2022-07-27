@@ -4,13 +4,15 @@ using UnityEngine;
 
 public class PlayerStateJump : PlayerState {
 
+    //private float jumpSpeed = 17f;
+
     public override void EnterState(PlayerStateManager player, PlayerState prevState) {
-        Debug.Log("Entering Jump state");
+        //Debug.Log("Entering Jump state");
         horizontalSpeed = player.playerRigidbody2D.velocity.x;
-        //verticalSpeed = player.playerRigidbody2D.velocity.y;
+        //verticalSpeed = player.playerRigidbody2D.velocity.y + (jumpSpeed * player.playerRigidbody2D.gravityScale);
         UpdateAnimatorState(player, "IsJumping");
     }
-    public override void ResetState() {
+    public override void ResetState(PlayerStateManager player) {
         horizontalSpeed = 0f;
         verticalSpeed = 0f;
     }

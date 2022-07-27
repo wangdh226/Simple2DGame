@@ -25,20 +25,17 @@ public class PlayerStateManager : MonoBehaviour {
     [SerializeField] private float jumpSpeed = 17f;
 
     // Private values with defaults
-    private float slopeAngle = 0f;
-    private Vector2 slopeVector;
+    //private float slopeAngle = 0f;
+    //private Vector2 slopeVector;
     private bool isFacingRight = false;
 
 
     // Constants
-    private const float CROUCH_RUN_MULTIPLIER = 0.33f;
+    private const float CROUCH_RUN_MULTIPLIER = 0.5f;
     private const float CROUCH_JUMP_MULTIPLIER = 0.8f;
     private const float AIR_SPEED_MULTIPLIER = 0.8f;
-    private const float MOVEMENT_SMOOTHING_FACTOR = .05f;
-    private Vector2 ZERO_VELOCITY = Vector2.zero;
-
-
-
+    //private const float MOVEMENT_SMOOTHING_FACTOR = .05f;
+    //private Vector2 ZERO_VELOCITY = Vector2.zero;
 
 
 
@@ -86,6 +83,7 @@ public class PlayerStateManager : MonoBehaviour {
     private void FixedUpdate() {
         Move(currentState.getHorizontalSpeed, currentState.getVerticalSpeed);
 
+        // Check if player sprite needs to flip
         if ((currentState.getHorizontalSpeed > 0 && !isFacingRight) || (currentState.getHorizontalSpeed < 0 && isFacingRight)) {
             playerSpriteRenderer.flipX = !playerSpriteRenderer.flipX;
             isFacingRight = !playerSpriteRenderer.flipX;
@@ -94,7 +92,7 @@ public class PlayerStateManager : MonoBehaviour {
 
     public void SwitchState(PlayerState newState) {
         PlayerState prevState = currentState;
-        currentState.ResetState();
+        currentState.ResetState(this);
         currentState = newState;
         currentState.EnterState(this, prevState);
     }
@@ -106,7 +104,7 @@ public class PlayerStateManager : MonoBehaviour {
     public void Move(float horizontalSpeed, float verticalSpeed) {
         float moveSpeedX = horizontalSpeed * Time.fixedDeltaTime * 10f;
         moveSpeedX *= (currentState == crouchState ? CROUCH_RUN_MULTIPLIER : 1f);
-        moveSpeedX *= (currentState == jumpState || currentState == fallState ? AIR_SPEED_MULTIPLIER : 1f);
+        moveSpeedX *= ((currentState == jumpState || currentState == fallState) ? AIR_SPEED_MULTIPLIER : 1f);
 
         float moveSpeedY = verticalSpeed * Time.fixedDeltaTime * 10f;
         moveSpeedX *= (currentState == crouchState ? CROUCH_JUMP_MULTIPLIER : 1f);
