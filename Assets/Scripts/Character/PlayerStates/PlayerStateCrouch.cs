@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerStateCrouch : PlayerState {
 
     private bool isUnderCeiling = false;
+    private const float JUMP_SPEED = 17f;
 
     public override void EnterState(PlayerStateManager player, PlayerState prevState) {
         //Debug.Log("Entering Crouch state");
@@ -39,8 +40,15 @@ public class PlayerStateCrouch : PlayerState {
                 player.SwitchState(player.idleState);
             }
         } else if (Input.GetButton("Jump")) {
-            player.SwitchState(player.jumpState);
-            //player.SwitchState(player.jumpState); // crouch jump?
+            //player.SwitchState(player.jumpState);
+
+            // crouch jump
+            RaycastHit2D hit = GroundCheck(player);
+            if (hit) {
+                verticalSpeed = JUMP_SPEED * player.playerRigidbody2D.gravityScale;
+            } else {
+                verticalSpeed = 0f;
+            }
         }
 
         horizontalSpeed = Input.GetAxisRaw("Horizontal") * player.runSpeed;

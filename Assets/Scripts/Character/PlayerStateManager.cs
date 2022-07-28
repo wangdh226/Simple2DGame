@@ -31,7 +31,7 @@ public class PlayerStateManager : MonoBehaviour {
 
 
     // Constants
-    private const float CROUCH_RUN_MULTIPLIER = 0.5f;
+    private const float CROUCH_RUN_MULTIPLIER = 0.4f;
     private const float CROUCH_JUMP_MULTIPLIER = 0.8f;
     private const float AIR_SPEED_MULTIPLIER = 0.8f;
     //private const float MOVEMENT_SMOOTHING_FACTOR = .05f;
@@ -107,7 +107,7 @@ public class PlayerStateManager : MonoBehaviour {
         moveSpeedX *= ((currentState == jumpState || currentState == fallState) ? AIR_SPEED_MULTIPLIER : 1f);
 
         float moveSpeedY = verticalSpeed * Time.fixedDeltaTime * 10f;
-        moveSpeedX *= (currentState == crouchState ? CROUCH_JUMP_MULTIPLIER : 1f);
+        moveSpeedY *= (currentState == crouchState ? CROUCH_JUMP_MULTIPLIER : 1f);
 
         playerRigidbody2D.velocity = new Vector2(moveSpeedX, (moveSpeedY == 0f ? playerRigidbody2D.velocity.y : moveSpeedY));
     }

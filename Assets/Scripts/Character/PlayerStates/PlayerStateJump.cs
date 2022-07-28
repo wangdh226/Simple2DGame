@@ -4,13 +4,22 @@ using UnityEngine;
 
 public class PlayerStateJump : PlayerState {
 
-    //private float jumpSpeed = 17f;
+    private const float JUMP_SPEED = 17f;
+    private bool hasLeftGround = false;
 
     public override void EnterState(PlayerStateManager player, PlayerState prevState) {
         //Debug.Log("Entering Jump state");
         horizontalSpeed = player.playerRigidbody2D.velocity.x;
-        //verticalSpeed = player.playerRigidbody2D.velocity.y + (jumpSpeed * player.playerRigidbody2D.gravityScale);
-        UpdateAnimatorState(player, "IsJumping");
+        verticalSpeed = player.playerRigidbody2D.velocity.y + (JUMP_SPEED * player.playerRigidbody2D.gravityScale);
+
+        hasLeftGround = false;
+        this.prevState = prevState;
+        //if(prevState == player.crouchState) {
+        //    UpdateAnimatorState(player, "IsCrouching");
+        //} else {
+            UpdateAnimatorState(player, "IsJumping");
+        //}
+        
     }
     public override void ResetState(PlayerStateManager player) {
         horizontalSpeed = 0f;
@@ -18,20 +27,43 @@ public class PlayerStateJump : PlayerState {
     }
 
     public override void UpdateState(PlayerStateManager player) {
+
+        // Check if we are on the ground every frame+
+        RaycastHit2D hit = GroundCheck(player);
+
         // Check for falling: if player is not on ground, and falling velocity < threshold(debounce)
-        if (!GroundCheck(player) && player.playerRigidbody2D.velocity.y < fallSpeedThreshold) {
-            player.SwitchState(player.fallState);
-        } else if (GroundCheck(player)) {
-            if (Input.GetAxisRaw("Horizontal") != 0) {
-                player.SwitchState(player.runState);
-            } else {
-                player.SwitchState(player.idleState);
+        if (hit && !hasLeftGround) {
+            // On the ground AND has not left the ground(not yet 'actually jumped')
+              // then keep the vertical speed to the jump speed since we haven't 'actually jumped'
+            verticalSpeed = JUMP_SPEED * player.playerRigidbody2D.gravityScale;
+        } else if (!hit && !hasLeftGround) {
+            // Not on the ground AND has not yet left the ground
+              // then set hasLeftGround to true and let gravity - ie now we are in the air and 'actually jumped'
+            hasLeftGround = true;
+            verticalSpeed = 0f;
+        }
+
+        // After we have left the ground, let gravity deal with falling
+          // Switch states to handle situations - go to fallState, lands on smth before fallState
+        if (hasLeftGround) {
+            // If velocity becomes less than the fallSpeedThreshold(always negative) -> fallState
+            if (player.playerRigidbody2D.velocity.y < fallSpeedThreshold) {
+                player.SwitchState(player.fallState);
             }
-            
+
+            // If lands on 'ground' before fallState, check input for next state
+            if (hit) {
+                if (Input.GetButton("Crouch")) {
+                    player.SwitchState(player.crouchState);
+                } else if (Input.GetAxisRaw("Horizontal") != 0) {
+                    player.SwitchState(player.runState);
+                } else {
+                    player.SwitchState(player.idleState);
+                }
+            }
         }
 
         horizontalSpeed = Input.GetAxisRaw("Horizontal") * player.runSpeed;
-        verticalSpeed = player.playerRigidbody2D.velocity.y;
     }
 
     public override void OnCollisionEnter(PlayerStateManager player, Collision collision) {

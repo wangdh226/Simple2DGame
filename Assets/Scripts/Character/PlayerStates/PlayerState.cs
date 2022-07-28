@@ -8,8 +8,8 @@ public abstract class PlayerState {
     public float getVerticalSpeed { get { return verticalSpeed; } }
     private protected float verticalSpeed;
 
-    private float groundCheckCastDistance = 0.3f;
-    private protected float fallSpeedThreshold = 0.3f;
+    private float groundCheckCastDistance = 0.1f;
+    private protected float fallSpeedThreshold = -0.1f;
     private protected PlayerState prevState;
 
     public abstract void EnterState(PlayerStateManager player, PlayerState prevState);
