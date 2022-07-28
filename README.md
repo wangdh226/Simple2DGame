@@ -16,7 +16,7 @@ Among these include:
 * **Camera** - Spent some time trying to manipulate the Main Camera before learning about Cinemachine and virtual cameras. Now using virtual cam to follow player movement, and maybe add a some extra lookahead functionality in future(lookdown + lookup).
 * **TileMaps** - Spent time learning how to use Tilemaps, Tile Palettes, Sorting Layers, Layers, and Sprites(and editor).
 
-# Levels 
+## Levels 
 For these learning projects, I generally try to focus on a specific aspect of development for each level/scene...
 Among these include:
 * **Level 1** - Figure out Tiles, TileMaps, Tile Palettes, and basic animation/movement. Most changes have been overwritten with prefab
