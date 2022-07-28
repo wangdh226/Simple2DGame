@@ -35,6 +35,7 @@ public abstract class PlayerState {
         Vector2 colliderPos = player.playerCircleCollider2D.transform.position;    // center of the CircleCollider2D(center of player)
         colliderPos += player.playerCircleCollider2D.offset;                       // add offset to find 'actual' center of CircleCollider2D
         float colliderRadius = player.playerCircleCollider2D.radius;
+        
         // CircleCast below CircleCollider to check for whatIsGround colliders
         RaycastHit2D hit = Physics2D.CircleCast(colliderPos, colliderRadius, Vector2.down, groundCheckCastDistance, player.whatIsGround);
         return hit;

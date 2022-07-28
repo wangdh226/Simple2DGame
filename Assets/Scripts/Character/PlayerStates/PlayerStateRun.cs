@@ -24,9 +24,9 @@ public class PlayerStateRun : PlayerState {
         }
 
         // Check for user inputs - priority: crouch > jump > idle
-        if (Input.GetButton("Crouch")) {
+        if (Input.GetButtonDown("Crouch")) {
             player.SwitchState(player.crouchState);
-        } else if (Input.GetButton("Jump")) {
+        } else if (Input.GetButtonDown("Jump")) {
             player.SwitchState(player.jumpState);
         } else if (Input.GetAxisRaw("Horizontal") == 0) {
             player.SwitchState(player.idleState);

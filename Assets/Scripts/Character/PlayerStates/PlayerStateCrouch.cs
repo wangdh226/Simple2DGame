@@ -39,6 +39,7 @@ public class PlayerStateCrouch : PlayerState {
                 player.SwitchState(player.idleState);
             }
         } else if (Input.GetButton("Jump")) {
+            player.SwitchState(player.jumpState);
             //player.SwitchState(player.jumpState); // crouch jump?
         }
 
