@@ -26,9 +26,9 @@ public class PlayerStateCrouch : PlayerState {
     public override void UpdateState(PlayerStateManager player) {
 
         // Check for falling: if player is not on ground, and falling velocity < threshold(debounce)
-        //if (!GroundCheck(player) && player.playerRigidbody2D.velocity.y < FALL_SPEED_THRESHOLD && !isCrouchJumping) {
-        //    player.SwitchState(player.fallState);
-        //}
+        if (!GroundCheck(player) && player.playerRigidbody2D.velocity.y < FALL_SPEED_THRESHOLD && !Input.GetButton("Crouch")) {
+            player.SwitchState(player.fallState);
+        }
 
         isUnderCeiling = CheckCeiling(player);
         // Check for crouch input and set state
