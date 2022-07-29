@@ -5,13 +5,10 @@ using UnityEngine;
 public class PlayerStateFall : PlayerState {
 
     public override void EnterState(PlayerStateManager player, PlayerState prevState) {
-        //Debug.Log("Entering Fall state");
         horizontalSpeed = player.playerRigidbody2D.velocity.x;
 
         this.prevState = prevState;
-        if (prevState != player.crouchState) {
-            UpdateAnimatorState(player, "IsFalling");
-        }
+        UpdateAnimatorState(player, "IsFalling");
     }
 
     public override void ResetState(PlayerStateManager player) {
@@ -20,7 +17,6 @@ public class PlayerStateFall : PlayerState {
     }
 
     public override void UpdateState(PlayerStateManager player) {
-
         // Change 'prevState' based on player input
         // Since the state change only happens when hitting the ground,
           // constantly update next state based on player input while falling

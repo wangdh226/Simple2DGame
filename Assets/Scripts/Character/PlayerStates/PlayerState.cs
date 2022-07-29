@@ -2,23 +2,26 @@ using UnityEngine;
 
 public abstract class PlayerState {
 
+    // Constants
+    private protected const float OBSTACLE_CHECK_CAST_DISTANCE = 0.1f;
+    private protected const float FALL_SPEED_THRESHOLD = -0.1f;
+    private protected const float JUMP_SPEED = 17f;
+    // PlayerState fields    
+    private protected PlayerState prevState;
+
+    // Speed state properties/fields
     public float getHorizontalSpeed { get { return horizontalSpeed; } }
     private protected float horizontalSpeed;
-
     public float getVerticalSpeed { get { return verticalSpeed; } }
     private protected float verticalSpeed;
 
-    private float groundCheckCastDistance = 0.1f;
-    private protected float fallSpeedThreshold = -0.1f;
-    private protected PlayerState prevState;
-
+    // Methods to implement in children
     public abstract void EnterState(PlayerStateManager player, PlayerState prevState);
     public abstract void ResetState(PlayerStateManager player);
     public abstract void UpdateState(PlayerStateManager player);
-
     public abstract void OnCollisionEnter(PlayerStateManager player, Collision collision);
 
-
+    // Methods to be used by children
     public void UpdateAnimatorState(PlayerStateManager player, string newState) {
         // Disable all animator bools
         player.animator.SetBool("IsIdling", false);
@@ -37,9 +40,7 @@ public abstract class PlayerState {
         float colliderRadius = player.playerCircleCollider2D.radius;
         
         // CircleCast below CircleCollider to check for whatIsGround colliders
-        RaycastHit2D hit = Physics2D.CircleCast(colliderPos, colliderRadius, Vector2.down, groundCheckCastDistance, player.whatIsGround);
+        RaycastHit2D hit = Physics2D.CircleCast(colliderPos, colliderRadius, Vector2.down, OBSTACLE_CHECK_CAST_DISTANCE, player.whatIsGround);
         return hit;
     }
-
-
 }

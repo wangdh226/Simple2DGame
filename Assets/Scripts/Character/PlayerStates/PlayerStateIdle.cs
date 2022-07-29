@@ -5,7 +5,6 @@ using UnityEngine;
 public class PlayerStateIdle : PlayerState {
 
     public override void EnterState(PlayerStateManager player, PlayerState prevState) {
-        //Debug.Log("Entering Idle state");
         // Upon entering Idle - velocity is 0
         horizontalSpeed = 0f;
         verticalSpeed = 0f;
@@ -20,7 +19,7 @@ public class PlayerStateIdle : PlayerState {
     public override void UpdateState(PlayerStateManager player) {
 
         // Check for falling: if player is not on ground, and falling velocity < threshold(debounce)
-        if (!GroundCheck(player) && player.playerRigidbody2D.velocity.y < fallSpeedThreshold) {
+        if (!GroundCheck(player) && player.playerRigidbody2D.velocity.y < FALL_SPEED_THRESHOLD) {
             player.SwitchState(player.fallState);
         }
 

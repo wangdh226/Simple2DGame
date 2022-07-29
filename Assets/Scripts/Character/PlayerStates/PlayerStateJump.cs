@@ -4,22 +4,17 @@ using UnityEngine;
 
 public class PlayerStateJump : PlayerState {
 
-    private const float JUMP_SPEED = 17f;
     private bool hasLeftGround = false;
 
     public override void EnterState(PlayerStateManager player, PlayerState prevState) {
-        //Debug.Log("Entering Jump state");
+        // Upon entering state, maintain previous horizontal velocity
         horizontalSpeed = player.playerRigidbody2D.velocity.x;
+        // Upon entering state, maintain previous vertical velocity and add jump velocity
         verticalSpeed = player.playerRigidbody2D.velocity.y + (JUMP_SPEED * player.playerRigidbody2D.gravityScale);
 
         hasLeftGround = false;
         this.prevState = prevState;
-        //if(prevState == player.crouchState) {
-        //    UpdateAnimatorState(player, "IsCrouching");
-        //} else {
-            UpdateAnimatorState(player, "IsJumping");
-        //}
-        
+        UpdateAnimatorState(player, "IsJumping");
     }
     public override void ResetState(PlayerStateManager player) {
         horizontalSpeed = 0f;
@@ -47,10 +42,9 @@ public class PlayerStateJump : PlayerState {
           // Switch states to handle situations - go to fallState, lands on smth before fallState
         if (hasLeftGround) {
             // If velocity becomes less than the fallSpeedThreshold(always negative) -> fallState
-            if (player.playerRigidbody2D.velocity.y < fallSpeedThreshold) {
+            if (player.playerRigidbody2D.velocity.y < FALL_SPEED_THRESHOLD) {
                 player.SwitchState(player.fallState);
             }
-
             // If lands on 'ground' before fallState, check input for next state
             if (hit) {
                 if (Input.GetButton("Crouch")) {

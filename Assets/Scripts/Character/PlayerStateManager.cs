@@ -108,7 +108,7 @@ public class PlayerStateManager : MonoBehaviour {
 
         float moveSpeedY = verticalSpeed * Time.fixedDeltaTime * 10f;
         moveSpeedY *= (currentState == crouchState ? CROUCH_JUMP_MULTIPLIER : 1f);
-
+        Debug.Log(currentState == crouchState);
         playerRigidbody2D.velocity = new Vector2(moveSpeedX, (moveSpeedY == 0f ? playerRigidbody2D.velocity.y : moveSpeedY));
     }
 }
