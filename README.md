@@ -16,6 +16,17 @@ Among these include:
 * **Camera** - Spent some time trying to manipulate the Main Camera before learning about Cinemachine and virtual cameras. Now using virtual cam to follow player movement, and maybe add a some extra lookahead functionality in future(lookdown + lookup).
 * **TileMaps** - Spent time learning how to use Tilemaps, Tile Palettes, Sorting Layers, Layers, and Sprites(and editor).
 
+## Levels 
+For these learning projects, I generally try to focus on a specific aspect of development for each level/scene...
+Among these include:
+* **Level 1** - Figure out Tiles, TileMaps, Tile Palettes, and basic animation/movement. Most changes have been overwritten with prefab
+* **Level 2** - Figuring out Brackeys' movement controller, implementing it with new sprites. Most changes have been overwritten with prefab
+* **Level 3** - Converting Brackeys' movement controller to my own 'NewPlayerMovementController'. Implemented same functionality
+* **Level 4** - Updating NPMC to handle slopes. Sorta got it, but also not really. Ended up just detecting slope and disabling friction
+* **Level 5** - Creating a State Machine to handle everything NPMC did - will have to handle slopes at some point
+* **Level 6** - TBD - probably mess with moving platforms, collisions(iteractables), other stage mechanics, rather than player mechanics
+
+
 ## Other information
 I have several other ideas I might take time to implement in the future, but I think I'd like to start another project from scratch now.
 I might take some time to polish up some stuff in the game so I can add it to my portfolio, but also this repo could suffice??
